@@ -1,0 +1,41 @@
+
+# Week 2 Discussion Section 
+## Law of Large Numbers 
+
+Date: 2024-10-08 
+
+
+
+```{r}
+# set up 
+library(tidyverse)
+```
+
+```{r}
+# plot of coin flip 
+set.seed(1234) # setting the seed of random numbers for reproduciblity 
+
+lln_norm <- tibble( # create dataframe 
+  n_sz = sample(5:500, 1e4, replace = TRUE), #1000 samples
+  sample_mean = sapply(n_sz, function(n) mean(rnorm(n))) # mean of samples we drew for every row 
+)
+
+ggplot(data = lln_norm) +
+  geom_point(aes(x = n_sz, y = sample_mean), alpha = 0.25, shape = 20) +
+  geom_hline(yintercept = 0,
+             color = "cyan4") +
+  labs(x = "Sample size",
+       y = "Sample mean") +
+  theme_bw()
+```
+
+Notes for HW 
+
+ggplot(data = df) +
+  geom_point(aes(x = long, y = lat, color = source))
+  
+  
+```{r}
+
+```
+
