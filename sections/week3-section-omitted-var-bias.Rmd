@@ -1,0 +1,51 @@
+
+
+# Omitted Variable Bias 
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+N <- 100
+x1 <- rnorm(N)
+x2 <- 2 + -3 * x1 + rnorm(N, sd = 1)
+  
+  
+beta0 <- 5
+beta1 <- 1.5
+beta2 <- -0.5
+sigma <- 2
+
+y <- beta0 + beta1 * x1 + beta2 * x2 + rnorm(N, sd = sigma)
+# yhat 
+
+dat <- tibble(y, x1, x2)
+```
+
+
+```{r}
+# Estimate beta1 while ignoring x2
+summary(lm(y ~x1, dat))
+```
+
+## Estimate of beta1 is 2.9 
+
+```{r}
+# Estimate beta1, accounting for x2
+summary(lm(y ~ x2, dat))
+```
+
+It is important to know which variables could have affect on parameter you are examining. Bringing in the ecological knowledge will help to better understand which variables may interact
+
+
+If variables are no longer correlated, you can estimate betas and ignore the others and still get similar values. 
+
+
+What assumption of OLS is violated by the omitted varaible? 
+-  The X variable is exogenous i.e E[u | X] = 0
+-  There is not other variable correlated with X that also affects Y
+
+
+
+
