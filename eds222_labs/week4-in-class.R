@@ -13,7 +13,7 @@ summary(lm(bill_length_mm ~ body_mass_g + sex + body_mass_g : sex, penguins))
 # body mass = B0 + B1(body_mass) + B2(sexmale) + B3(body_mass x sexmale)
 
 # If female: bill_length = B0 + B1(body_mass)
-# If male: bill_length = B0 + (B1 + B3)body_mass 
+# If male: bill_length = B0 + B2 + (B1 + B3)body_mass 
 
 body_flipper_sex <- lm(body_mass_g~flipper_length_mm + sex + flipper_length_mm : sex, penguins)
 
