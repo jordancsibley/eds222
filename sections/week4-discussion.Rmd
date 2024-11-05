@@ -28,7 +28,7 @@ elk_density <- beta0 + beta1 * canopy_height + beta2 * wolf_density +
 yellowstone <- tibble(canopy_height, wolf_density, elk_density)
 ggplot(yellowstone, aes(canopy_height, elk_density, color = wolf_density)) +
   geom_point(shape = 21) +
-  scale_color_distiller(palette = "Reds") +
+  scale_color_distiller(palette = "Reds", direction = 1) +
   theme_classic()
 ```
 
@@ -58,7 +58,7 @@ prediction <- expand_grid(
 
 ggplot(yellowstone, aes(canopy_height, elk_density, color = wolf_density)) +
   geom_point(shape = 21) +
-  scale_color_distiller(palette = "Reds") +
+  scale_color_distiller(palette = "Reds", direction = 1) +
   geom_line(aes(y = yhat, group = wolf_density), prediction, linewidth = 2) +
   theme_classic()
 ```
@@ -67,3 +67,10 @@ Questions:
 
 * Where would the line for wolf density = 4 be? How about wolf density = 2?
 * What's the slope of canopy height when wolf density is 1.5, 3, and 4.5?
+```{r}
+# slope of canopy at these 3 different wolf densities 
+beta1_hat + beta3_hat *c(1.5, 3, 4.5)
+```
+
+
+

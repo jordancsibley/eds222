@@ -25,4 +25,5 @@ ggplot(penguins, aes(flipper_length_mm, body_mass_g, color = sex))+
               color = 'blue')
 
 # lines are almost paralel because our B3 is -0.2942. Makes the diff between male and female not that much 
-  
+
+
