@@ -35,14 +35,18 @@ This week, we will review key topics from earlier weeks and postpone new materia
 3.  Draw the PMF for a $Bernoulli(p=0.25)$ variable by hand. Then use ggplot to recreate your drawing.
 
 ```{r}
-# library(tidyverse)
-# df <- tibble(0, 0.25,
-#        # 1, 0.75)
-# 
-# ggplot(data = df) +
-#   geom_point()
+ library(tidyverse)
+ df <- tibble(x = c(0, 1),
+              y = c(0.25, 0.75))
+ 
+ ggplot(data = df, aes(x = x, y = y)) +
+   geom_point() + 
+   geom_segment(aes(x = 0, y = 0, xend = 0, yend = 0.25)) + 
+   geom_segment(aes(x = 1, y = 0, xend = 1, yend= 0.75)) + 
+   theme_minimal() + 
+   scale_x_discrete(breaks = c(0, 1))
 
-0.5 * 0.5 * 0.5 * 0.5
+
 ```
 
 4.  What's the probability of observing $\{ 0, 0, 1, 1 \}$ from a $Bernoulli(p = 0.5)$ variable?\
