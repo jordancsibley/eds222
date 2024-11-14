@@ -155,6 +155,7 @@ drinking_water_complete %>%
 
 Recall that logistic regression uses *maximum likelihood*, not OLS, to estimate coefficients. Usually we will use functions from R packages to fit these models, but I want you to do it yourself once.
 
+
 ## Negative log likelihood
 
 Estimating coefficients is an optimization problem: what combination yields the maximum likelihood? There are two things we can do to make our problem more tractable for optimization.
@@ -205,7 +206,9 @@ coef_optim <- optim(c(beta0 = 0, beta1 = 0),
 
 ## Questions
 
-1.  What were your maximum likelihood estimates for $\hat\beta_0$ and $\hat\beta_1$?
+1.  What were your maximum likelihood estimates for $\hat\beta_0$ and $\hat\beta_1$?\
+    beta0 = -2.422\
+    beta1 = 0.00439
 
 ```{r}
 # What are the maximum likelihood estimates for our coefficients?
@@ -220,12 +223,12 @@ coef_optim
 beta1_hat <- coef_optim$par[2]
 beta0_hat <- coef_optim$par[1]
 
-logit_p <- (beta0 + beta1* c(0, 50, 100))
+logit_p <- (beta0_hat + beta1_hat* c(0, 50, 100))
 p <- inv_logit(logit_p)
 p
 # Create and plot predictions
 tibble(pcthisp = 0:100,
-       logit_p = beta0 + beta1* pcthisp,
+       logit_p = beta0_hat + beta1_hat* pcthisp,
        p = inv_logit(logit_p)) %>% 
   ggplot(aes(pcthisp, p)) + 
   geom_line()
@@ -234,30 +237,52 @@ tibble(pcthisp = 0:100,
 3.  How much does the probability of a drinking water violation change when percent Hispanic population increases from 10 to 20%, 45 to 55%, and 80 to 90%?
 
 ```{r}
+logit_p_lower <- (beta0_hat + beta1_hat* c(10, 45, 80))
+p_low <- inv_logit(logit_p_lower)
+
+logit_p_higher <- (beta0_hat + beta1_hat* c(20, 55, 90))
+p_high <- inv_logit(logit_p_higher)
+
+p_high - p_low
 ```
 
 4.  How would you interpret the coefficients? What do the slope and intercept mean in this context? Where is the relationship linear, and where is it non-linear?
+
 5.  Create a "DEM" of the likelihood landscape for $\beta_0$ and $\beta_1$. Choose a range of $\beta_0$ and $\beta_1$ values around your best estimates, calculate the likelihood for each combination, and create a figure with $\beta_0$ on the x-axis, $\beta_1$ on the y-axis, and the likelihood as the fill. Add a point for $(\hat\beta_0, \hat\beta_1)$.\
     Bonus problem: add contours!
 
+    \
+    beta0 = -2.422\
+    beta1 = 0.00439
+
+    \
+    Notes on apply functions
+
+    sapply: Works on vectors and creates a new vector that has been altered by the function
+
+    mapply: multiple vectors then gives you one output. multiple application
+
 ```{r}
 likelihood_dem <- expand_grid(
-  ???,
-  ???
+  beta0 = seq(-3, -2, length.out = 20),
+  beta1 = seq(0, 0.01, length.out = 20)
 ) %>% 
-  mutate(coefficients = mapply(function(b0, b1) c(beta0 = b0, beta1 = b1),
-                               ???, ???,
-                               SIMPLIFY = FALSE),
-         negloglik = sapply(coefficients, 
-                            ???, 
-                            data = ???),
-         likelihood = ???)
+   mutate(coefficients = mapply(function(b0, b1) c(beta0 = b0, beta1 = b1),
+                                beta0, beta1,
+                                SIMPLIFY = FALSE),
+          negloglik = sapply(coefficients, 
+                             likelihood_fun, 
+                             data = drinking_water_complete),
+          likelihood = exp(-negloglik))
 
-ggplot(likelihood_dem, aes(???, ???, fill = ???)) +
-  geom_raster() +
-  geom_point(x = ???, y = ???, color = "red")
+ ggplot(likelihood_dem, aes(beta0, beta1, fill = negloglik)) +
+   geom_raster() +
+   geom_point(x = beta0_hat, y = beta1_hat, color = "red")
 
 ```
+
+This tells us that beta 0 is more sensitive to change than beta 1. Our model is very sensitive to the intercept we choose. Our estimate for beta 1, our likelihood wouldn't change that much. Confidence interval for beta 1 is much larger than it is for beta 0 
+
 
 # Fit the full logistic regression model using `glm()`
 
@@ -265,8 +290,10 @@ Normally we won't need to write our own likelihood functions and use optimizatio
 
 Here's how to fit the same model from the previous section. Notice the formula and data arguments look very similar to what we'd use for `lm()`. But now we have to specify the response variable's "family" (i.e., the type of random variable) and the link function we want to use (logit, in our case).
 
+glm = generalized linear model 
+
 ```{r}
-pcthisp_glm <- glm(violations ~ pcthisp, 
+pcthisp_glm <- glm(violation ~ pcthisp, 
                    family = binomial(link = "logit"),
                    data = drinking_water)
 summary(pcthisp_glm)
@@ -278,7 +305,9 @@ summary(pcthisp_glm)
 1.  How would you fit a model that includes an interaction term between ethnicity and SES?
 
 ```{r}
-interaction_glm <- ???
+interaction_glm <- glm(violation~pcthisp * medianincomehouse,
+                       family = binomial(link = 'logit'),
+                       data = drinking_water)
 summary(interaction_glm)
 
 ```
@@ -287,15 +316,17 @@ summary(interaction_glm)
 
 ```{r}
 predictions <- expand_grid(
-  pcthisp = ???,
-  medianincomehouse = ???
+  pcthisp = 0:100,
+  medianincomehouse = seq(20000, 100000, length.out = 100)
 ) %>% 
-  mutate(violations = predict(???, 
-                              newdata = ., 
-                              type = ???))
+  mutate(violations = predict(interaction_glm, 
+                              newdata = ., # tells to look above to predictions 
+                              type = "response"))
 
 # Create plot
-
+ggplot(predictions, aes(pcthisp, medianincomehouse, fill = violations))+
+  geom_raster() + 
+  scale_fill_distiller(palette = "Reds", direction = 1)
 ```
 
 3.  Interpret the predicted surface. How does SES influence the relationship between ethnicity and exposure to environmental hazards? What is the "slope" of the probability of a violation w.r.t. percent Hispanic population at low, medium, and high median household income levels?\
