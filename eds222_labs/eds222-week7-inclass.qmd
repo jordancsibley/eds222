@@ -4,7 +4,7 @@ format:
   html:
     code-tools: true
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 This week, we will review key topics from earlier weeks and postpone new material to week 8. As you complete the following exercises, please try to identify your "muddiest" areas. Are there formulas or functions you're using and can't articulate why? Are there similar topics that you're having a hard time differentiating? Make a note of these points as you go - that will help guide your studying and give me a better idea of how to clarify concepts and tools in our final weeks.
@@ -80,10 +80,20 @@ This week, we will review key topics from earlier weeks and postpone new materia
     4.  `dbinom()`
     5.  `rbinom()`
 
-7.  Which R function would help you solve problem 4 above? Write the code below.
+7.  Which R function would help you solve problem 4 above? Write the code below.\
+    \
+    What's the probability of observing $\{ 0, 0, 1, 1 \}$ from a $Bernoulli(p = 0.5)$ variable?\
+    Since each is a 50/50 chance, I multiplied the probability by the number of values to get 0.0625.
 
 ```{r}
+
+obs <- c(0, 0, 1, 1)
+dbinom(obs, size = 1, prob = 0.5)
 ```
+
+Gives us a series that prints the probability of each of the observations. If the parameter is 0.9, then the probability would be 0.1, 0.1, 0.9, 0.9.
+
+Size = 1 means that it is a binary (Bernoulli)
 
 ## Link functions
 
