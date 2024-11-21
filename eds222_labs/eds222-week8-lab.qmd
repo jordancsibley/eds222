@@ -141,7 +141,7 @@ ggplot(data = nestlingpb_data, aes(x = hood, y = blood_ug_dl_pbwt)) +
 
 #### Step 1: state the null and alternative hypotheses
 
-*H~0~: Neighborhood has no effect on blood Pb levels in mockingbird nestilings \
+*H~0~: Neighborhood has no effect on blood Pb levels in mockingbird nestilings\
 H~A~: Neighborhood has an effect on blood Pb levels in mockingbird nestilings*
 
 #### Step 2: calculate the point statistic
@@ -228,7 +228,7 @@ H~A~:*
 
 1\) What is the relevant sample statistic for our hypothesis?
 
-Regression coefficient 
+Regression coefficient
 
 2\) How would you calculate it?
 
@@ -280,8 +280,51 @@ Revisit the visualization of the blood and feather Pb levels. One point seems to
 
 ```{r}
 #| label: remove-outlier
+# Remove outlier 
+no_outlier <- nestlingpb_data %>% 
+  filter(blood_ug_dl_pbwt < 40)
+```
+
+
+Step 1 state your hypothesis 
+
+*H~0~:\ Blood lead levels do not impact feather Pb level 
+H~A~:* Blood levels do impact feather Pb levels 
+
+
+```{r}
+# Step 2 calculate your point estimate
+blood_feathers_lm2 <- lm(feather_ug_g_pbwt~blood_ug_dl_pbwt, data = no_outlier)
 
 ```
+
+
+Step 3 quanify the uncertainity (estimate +- SE)
+```{r}
+beta1_estimate <- summary(blood_feathers_lm2)$coefficients[2, 1]
+beta1_se <- summary(blood_feathers_lm2)$coefficients[2, 2]
+
+tibble(beta1 = seq(-(beta1_estimate + beta1_se),
+                   beta1_estimate + beta1_se,
+                   length.out = 200),
+       density = dnorm(beta1, mean = 0, sd = beta1_se)) %>% 
+  ggplot(aes(beta1, density)) +
+  geom_line(color = "blue") +
+  geom_vline(xintercept = beta1_estimate, color = "red")
+```
+
+
+Step 4 calculate your p-value 
+```{r}
+pval <- 2 * pnorm(-abs(beta1_estimate), mean = 0, sd = beta1_se)
+pval
+```
+
+
+# Step 5 interpret 
+
+Higher p-value than with the outlier, but still significant
+
 
 **Question:** Of the two analyses (with and without the outlier), which had a lower p-value? Does that make it a better analysis?
 
@@ -301,14 +344,58 @@ For the last part of today's lab we will construct confidence intervals around t
 
 ```{r}
 #| label: blood-feather-pop
+# Simulate 
 
+beta0_estimate <- summary(blood_feathers_lm2)$coefficients[1, 1]
+beta1_estimate <- summary(blood_feathers_lm2)$coefficients[2, 1]
+sigma_estimate <- summary(blood_feathers_lm2)$sigma
+
+blood_feather_pop <- tibble(
+  #predictor
+  blood_ug_dl_pbwt = runif(1e4,
+                           min(no_outlier$blood_ug_dl_pbwt),
+                           max(no_outlier$blood_ug_dl_pbwt)),
+  # Mean response 
+  mean_feather = beta0_estimate + beta1_estimate * blood_ug_dl_pbwt,
+  # Simulated response 
+  feather_ug_g_pbwt = rnorm(1e4, mean = mean_feather, sd = sigma_estimate)
+)
+
+
+# Visualize 
+ggplot(blood_feather_pop, aes(blood_ug_dl_pbwt, feather_ug_g_pbwt)) +
+  geom_point(shape = 21)
+
+# verify coefs match  
+c(beta0_estimate, beta1_estimate)
+summary(lm(feather_ug_g_pbwt~blood_ug_dl_pbwt,
+           blood_feather_pop))
 ```
+
+
+Notice there are negative numbers (not possible), but for now we are going to be ok with it for the example 
 
 ### 2. Create one confidence interval
 
 ```{r}
 #| label: blood-feather-ci
 
+# draw a sample 
+blood_feather_sample <- sample_n(blood_feather_pop, 21) #picks rows from a data frame 
+
+# Calculate the point estimate and standard error from the sample 
+sample_lm <- lm(feather_ug_g_pbwt~blood_ug_dl_pbwt,
+           blood_feather_sample)
+
+point_est <- summary(sample_lm)$coefficients[2, 1]
+sample_error <- summary(sample_lm)$coefficients[2, 2]
+c(point_est, sample_error)
+
+# Confidence interval 
+sample_ci <- c(point_estimate = point_est, 
+               ci95_lower = point_est - 1.96 * sample_error,
+               ci95_upper = point_est + 1.96 * sample_error)
+sample_ci
 ```
 
 ### 3. Repeat the process
@@ -317,6 +404,40 @@ How many 95% CIs contain the population parameter?
 
 ```{r}
 #| label: repeat-ci
+
+repeat_ci <- replicate(100, {
+  
+  # draw a sample 
+  blood_feather_sample <- sample_n(blood_feather_pop, 21) #picks rows from a data frame 
+  
+  # Calculate the point estimate and standard error from the sample 
+  sample_lm <- lm(feather_ug_g_pbwt~blood_ug_dl_pbwt,
+                  blood_feather_sample)
+  
+  point_est <- summary(sample_lm)$coefficients[2, 1]
+  sample_error <- summary(sample_lm)$coefficients[2, 2]
+  c(point_est, sample_error)
+  
+  # Confidence interval 
+  sample_ci <- c(point_estimate = point_est, 
+                 ci95_lower = point_est - 1.96 * sample_error,
+                 ci95_upper = point_est + 1.96 * sample_error)
+  sample_ci
+})
+
+tibble(point_estimate = repeat_ci[1, ],
+       ci95_lower = repeat_ci[2, ],
+       ci95_upper = repeat_ci[3, ],
+       ci = 1:100) %>% 
+  mutate(valid = beta1_estimate >= ci95_lower &
+           beta1_estimate <= ci95_upper) %>% 
+  ggplot() +
+  geom_pointrange(aes(x = point_estimate, 
+                      xmin = ci95_lower, 
+                      xmax = ci95_upper, 
+                      y = ci,
+                      color = valid)) +
+  geom_vline(xintercept = beta1_estimate, color = "red")
 
 ```
 
